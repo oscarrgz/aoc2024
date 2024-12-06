@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import List
+import numpy as np
 
 
 def read_input(file_path: Path) -> List[str]:
@@ -12,8 +13,9 @@ def read_input(file_path: Path) -> List[str]:
     data_lines = []
     with open(file_path, "r") as in_file:
         data_lines = in_file.readlines()
+    data_lines = [list(line.replace("\n", "")) for line in data_lines]
 
-    return data_lines
+    return np.asarray(data_lines)
 
 
 def find_count_target_word(search_map: List[str], target_word: str = "XMAS") -> int:
@@ -35,41 +37,75 @@ def find_count_target_word(search_map: List[str], target_word: str = "XMAS") -> 
 
     for i_row in range(0, n_rows):
         for j_col in range(0, n_cols):
-            if search_map[i_row][j_col] != target_word[0]:
+            if search_map[i_row, j_col] != target_word[0]:
                 continue
 
             # Look horizontally forward:
             if j_col + word_length <= n_cols:
-                count += (
-                    1
-                    if search_map[i_row][j_col : j_col + word_length] == target_word
-                    else 0
-                )
-            # Look horizontally backwards
-            if j_col - word_length + 1 > 0:
-                count += (
-                    1
-                    if search_map[i_row][j_col : j_col - word_length : -1]
-                    == target_word
-                    else 0
-                )
-            elif j_col + 1 == word_length:
-                count += 1 if search_map[i_row][j_col::-1] == target_word else 0
+                word = "".join(search_map[i_row, j_col : j_col + word_length])
+                count += 1 if word == target_word else 0
+                # look diagonally up/forwards
+                if i_row + word_length <= n_rows:
+                    word = "".join(
+                        [
+                            search_map[i_row + x, j_col + x]
+                            for x in range(0, word_length)
+                        ]
+                    )
+                    count += 1 if word == target_word else 0
+                # look diagonally down/forward
+                if i_row - word_length + 1 >= 0:
+                    word = "".join(
+                        [
+                            search_map[i_row - x, j_col + x]
+                            for x in range(0, word_length)
+                        ]
+                    )
+                    count += 1 if word == target_word else 0
 
-            # Look vertically downwards:
-            if j_col + word_length <= n_cols:
-                count += (
-                    1
-                    if search_map[j_col : j_col + word_length][j_col] == target_word
-                    else 0
-                )
             # Look horizontally backwards
-            if j_col - word_length + 1 > 0:
-                count += (
-                    1
-                    if search_map[i_row][j_col : j_col - word_length : -1]
-                    == target_word
-                    else 0
+            if j_col - word_length + 1 >= 0:
+                word = "".join(
+                    [search_map[i_row, j_col - x] for x in range(0, word_length)]
                 )
-            elif j_col + 1 == word_length:
-                count += 1 if search_map[i_row][j_col::-1] == target_word else 0
+                count += 1 if word == target_word else 0
+                # look diagonally up/backwards
+                if i_row + word_length <= n_rows:
+                    word = "".join(
+                        [
+                            search_map[i_row + x, j_col - x]
+                            for x in range(0, word_length)
+                        ]
+                    )
+                    count += 1 if word == target_word else 0
+                # look diagonally down/backwards
+                if i_row - word_length + 1 >= 0:
+                    word = "".join(
+                        [
+                            search_map[i_row - x, j_col - x]
+                            for x in range(0, word_length)
+                        ]
+                    )
+                    count += 1 if word == target_word else 0
+            # Look vertically downwards:
+            if i_row + word_length <= n_rows:
+                word = "".join(search_map[i_row : i_row + word_length, j_col])
+                count += 1 if word == target_word else 0
+            # Look vertically upwards
+            if i_row - word_length + 1 >= 0:
+                word = "".join(
+                    [search_map[i_row - x, j_col] for x in range(0, word_length)]
+                )
+                count += 1 if word == target_word else 0
+
+    return count
+
+
+def solve_puzzle():
+    input_instructions = read_input(Path(__file__).parent / "input.txt")
+    solution_part_1 = find_count_target_word(input_instructions)
+    print(f"Solution to puzzle 1 is {solution_part_1}")
+
+
+if __name__ == "__main__":
+    solve_puzzle()
