@@ -28,6 +28,7 @@ class GuardPath:
         self.input_map = input_map
         self.n_rows = input_map.shape[0]
         self.n_cols = input_map.shape[1]
+        self.n_loops=0
 
     def find_start_point(self) -> Tuple[int, int]:
         """Find the initial position of the guard
@@ -81,11 +82,17 @@ class GuardPath:
         step_row, step_col = self.DIRECTION_MAP[current_direction]
         position_paths = set()
         position_paths.add((i_row, j_col))
+        current_turn = 0
         while not self.is_end(i_row=i_row + step_row, j_col=j_col + step_col):
             if self.input_map[i_row + step_row, j_col + step_col] != "#":
                 # I can take a step
                 i_row += step_row
                 j_col += step_col
+                if (current_turn)%4 and (i_row, j_col) in position_paths:
+                    self.n_loops+=1
+                    self.input_map[i_row + step_row, j_col + step_col]="0"
+                if self.input_map[i_row, j_col]!="0":
+                     self.input_map[i_row, j_col]=current_direction
                 position_paths.add((i_row, j_col))
             else:
                 # I need to turn
@@ -93,14 +100,17 @@ class GuardPath:
                     current_direction=current_direction
                 )
                 step_row, step_col = self.DIRECTION_MAP[current_direction]
+                current_turn+=1
         return len(position_paths)
 
 
 def solve_puzzle():
-    input_map = read_input(Path(__file__).parent / "input.txt")
+    input_map = read_input(Path(__file__).parent / "input_test.txt")
     guard = GuardPath(input_map=input_map)
     solution_part_1 = guard.count_route()
     print(f"Solution to puzzle 1 is {solution_part_1}")
+    print(f"Solution to puzzle 2 is {guard.n_loops}")
+    print(guard.input_map)
 
 
 if __name__ == "__main__":
